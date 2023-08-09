@@ -106,8 +106,8 @@ export default function Home() {
           </Button>
         )}
       </div>
-      <div className="h-[54px] w-[54px] rounded-full bg-[#FCD22D] mb-8"></div>
-      <section className="max-w-[900px] grid p-5 md:p-6 rounded-3xl md:rounded-[32px] bg-white shadow-large w-full md:grid-cols-[5fr,7fr] gap-5 md:gap-10">
+      <div className="h-[54px] w-[54px] rounded-full bg-[#FCD22D]"></div>
+      <section className="my-8 max-w-[900px] grid p-5 md:p-6 rounded-3xl md:rounded-[32px] bg-white shadow-large w-full md:grid-cols-[5fr,7fr] gap-5 md:gap-10">
         <div className="relative w-full aspect-[16/16] mb-1 lg:mb-0 order-1 md:order-2">
           <Image
             alt="Bridge to Base"
@@ -150,7 +150,7 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <p className="text-center text-xs md:text-sm leading-loose md:text-left pt-8 text-white">
+      <p className="text-center text-xs md:text-sm leading-loose md:text-left text-white">
         Built by{' '}
         <a
           href="https://twitter.com/davidhurley87"
