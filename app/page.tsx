@@ -49,23 +49,16 @@ export default function Home() {
   useEffect(() => {
     web3AuthModalPack.init({ options });
 
-    async function init() {
+    if (web3AuthModalPack) signIn();
+  }, []);
+
+  const signIn = async () => {
+    try {
       const { eoa } = await web3AuthModalPack.signIn();
       const provider =
         web3AuthModalPack.getProvider() as ethers.providers.ExternalProvider;
-
-      // we set react state with the provided values: owner (eoa address), chain, safes owned & web3 provider
       setOwnerAddress(eoa);
       setWeb3Provider(new ethers.providers.Web3Provider(provider));
-    }
-
-    if (web3AuthModalPack) init();
-  }, []);
-
-  const handleSignIn = async () => {
-    try {
-      const { eoa, safes } = await web3AuthModalPack.signIn();
-      console.log(eoa, safes);
     } catch (error) {
       console.log(error);
     }
@@ -76,6 +69,7 @@ export default function Home() {
     try {
       const signer = web3Provider?.getSigner();
       console.log('TODO: mint');
+      console.log(signer);
       setIsMinting(false);
     } catch (error) {
       console.log(error);
@@ -107,7 +101,7 @@ export default function Home() {
             Disconnect {formatAddress(ownerAddress)}
           </Button>
         ) : (
-          <Button onClick={handleSignIn} size="sm" variant="link">
+          <Button onClick={signIn} size="sm" variant="link">
             Connect Wallet
           </Button>
         )}
@@ -149,7 +143,7 @@ export default function Home() {
                 {isMinting ? 'Minting ...' : 'Mint For Free'}{' '}
               </Button>
             ) : (
-              <Button onClick={handleSignIn} size="lg">
+              <Button onClick={signIn} size="lg">
                 Connect Wallet
               </Button>
             )}
