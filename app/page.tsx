@@ -178,12 +178,28 @@ export default function Home() {
             </span>
           </div>
           <p className="text-[#444]">
-            Base mainnet opens for everyone on August 9 with Onchain Summer, a
-            multi-week festival of onchain art, music, gaming, & more.
+            Base mainnet opens for everyone on August 9 with the goal of
+            bringing 1B+ people onchain by providing a foundation for mainstream consumer crypto
+            products.
           </p>
           <p className="text-[#444]">
-            Bridge today to get ready and mint an NFT that commemorates you
-            being early, one of the first to teleport to the new internet.
+            In this demo you can mint an NFT for free with only your email.{' '}
+            <Link
+              className="underline"
+              target="_blank"
+              href="https://safe.global/core"
+            >
+              Safe
+            </Link>{' '}
+            is used to create your wallet and{' '}
+            <Link
+              className="underline"
+              target="_blank"
+              href="https://www.gelato.network/relay"
+            >
+              Gelato
+            </Link>{' '}
+            is used to pay for the mint transaction.
           </p>
           <div className="flex flex-col w-full gap-4 mt-auto">
             <Countdown />
