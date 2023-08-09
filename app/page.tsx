@@ -75,13 +75,7 @@ export default function Home() {
     setIsMinting(true);
     try {
       const signer = web3Provider?.getSigner();
-      const contract = new ethers.Contract(
-        '0x5FbDB2315678afecb367f032d93F642f64180aa3',
-        ['function mint()'],
-        signer
-      );
-      const tx = await contract.mint();
-      await tx.wait();
+      console.log('TODO: mint');
       setIsMinting(false);
     } catch (error) {
       console.log(error);
