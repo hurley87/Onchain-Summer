@@ -20,7 +20,7 @@ const chainNamespace =
 const chainId = `${process.env.NEXT_PUBLIC_CHAIN_ID}`;
 const rpcTarget = `${process.env.NEXT_PUBLIC_RPC}`;
 
-const options = {
+const options: any = {
   clientId,
   web3AuthNetwork,
   chainConfig: {
