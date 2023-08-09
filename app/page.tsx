@@ -3,14 +3,11 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Web3AuthModalPack, Web3AuthConfig } from '@safe-global/auth-kit';
-import { Web3AuthOptions } from '@web3auth/modal';
-import { CoinbaseAdapter } from '@web3auth/coinbase-adapter';
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import Countdown from '@/components/countdown';
 import { formatAddress } from '@/lib/utils';
 import { GelatoRelay } from '@gelatonetwork/relay-sdk';
-import { create } from 'ipfs-http-client';
 import OnchainSummer from '@/lib/OnchainSummer.json';
 import Link from 'next/link';
 import { toast } from '@/components/ui/use-toast';
@@ -23,12 +20,8 @@ const chainNamespace =
 const chainId = `${process.env.NEXT_PUBLIC_CHAIN_ID}`;
 const rpcTarget = `${process.env.NEXT_PUBLIC_RPC}`;
 
-console.log('env vars');
-console.log(clientId, web3AuthNetwork, chainNamespace, chainId, rpcTarget);
-
-// https://web3auth.io/docs/sdk/pnp/web/modal/initialize#arguments
-const options: Web3AuthOptions = {
-  clientId, // https://dashboard.web3auth.io/
+const options = {
+  clientId,
   web3AuthNetwork,
   chainConfig: {
     chainNamespace,
@@ -45,8 +38,6 @@ const web3AuthConfig: Web3AuthConfig = {
   txServiceUrl: 'https://safe-transaction-goerli.safe.global',
 };
 
-//web3auth.io/docs/sdk/pnp/web/modal/initialize#configuring-adapters
-// Instantiate and initialize the pack
 const web3AuthModalPack = new Web3AuthModalPack(web3AuthConfig);
 
 export default function Home() {
@@ -54,28 +45,10 @@ export default function Home() {
   const [web3Provider, setWeb3Provider] = useState<any>();
   const [isMinting, setIsMinting] = useState(false);
   const [transactionHash, setTransactionHash] = useState('');
-  const projectId = process.env.NEXT_PUBLIC_INFRA_PROJECT_ID;
-  const projectSecret = process.env.NEXT_PUBLIC_INFRA_SECRET;
-  const projectIdAndSecret = `${projectId}:${projectSecret}`;
   const target = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as string;
 
-  const ipfs = create({
-    host: 'ipfs.infura.io',
-    port: 5001,
-    protocol: 'https',
-    headers: {
-      authorization: `Basic ${Buffer.from(projectIdAndSecret).toString(
-        'base64'
-      )}`,
-    },
-  });
-
   useEffect(() => {
-    const coinbaseAdapter = new CoinbaseAdapter({
-      clientId,
-    }) as any;
-
-    web3AuthModalPack.init({ options, adapters: [coinbaseAdapter] });
+    web3AuthModalPack.init({ options });
 
     if (web3AuthModalPack) signIn();
   }, []);
@@ -95,14 +68,7 @@ export default function Home() {
     setIsMinting(true);
     try {
       const signer = (await web3Provider?.getSigner()) as any;
-      const mintJson = {
-        name: 'Onchain Summer 08.09.23',
-        description:
-          "Base is for everyone, everywhere. Bridge to Base to join us as the journey begins. This NFT commemorates you being early — you're one of the first to teleport into the next generation of the internet as we work to bring billions of people onchain. It's Onchain Summer and we're excited to celebrate with you.",
-        image: 'https://pollock-art.s3.amazonaws.com/giphy.gif',
-      };
-      const uploaded = await ipfs.add(JSON.stringify(mintJson));
-      const path = uploaded.path;
+      const path = process.env.NEXT_PUBLIC_NFT_METADATA;
       const contract = new ethers.Contract(target, OnchainSummer.abi, signer);
 
       try {
@@ -198,7 +164,6 @@ export default function Home() {
             alt="Bridge to Base"
             src="/giphy.gif"
             layout="fill"
-            objectFit="cover"
             className="rounded-3xl"
           />
         </div>
