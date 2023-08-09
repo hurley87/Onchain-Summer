@@ -100,7 +100,7 @@ export default function Home() {
               setIsMinting(false);
               toast({
                 title: 'NFT minted!',
-                description: 'View your NFT on the Blockscout or Opensea.',
+                description: 'View the NFT transaction on Blockscout.',
               });
               const transactionHash = taskStatus?.transactionHash as string;
               setTransactionHash(transactionHash);
