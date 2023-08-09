@@ -117,7 +117,7 @@ export default function Home() {
             className="rounded-3xl"
           />
         </div>
-        <div className="flex flex-col w-full gap-4 h-full overflow-scroll order-2 md:order-1 md:gap-4 hide-scrollbar">
+        <div className="flex flex-col w-full gap-4 h-full order-2 md:order-1 md:gap-4">
           <h1 className="text-[28px] text-black font-semibold tracking-tighter">
             Onchain Summer 08.09.23
           </h1>
