@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@gelatonetwork/relay-context": "^3.0.0",
-    "@openzeppelin/contracts": "^4.9.3",
-    "ipfs-http-client": "^60.0.1"
+    "@openzeppelin/contracts": "^4.9.3"
   }
 }
