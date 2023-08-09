@@ -7,6 +7,7 @@ import { Web3AuthOptions } from '@web3auth/modal';
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import Countdown from '@/components/countdown';
+import { formatAddress } from '@/lib/utils';
 
 const clientId = `${process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID}`;
 const web3AuthNetwork = `${process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK}` as any;
@@ -86,12 +87,6 @@ export default function Home() {
       console.log(error);
     }
   };
-
-  console.log(ownerAddress, web3Provider);
-
-  function formatAddress(address: string) {
-    return `${address.slice(0, 2)}..${address.slice(-4)}`;
-  }
 
   return (
     <main className="flex min-h-screen flex-col items-center p-6 md:p-12 bg-teaser-gradient">
