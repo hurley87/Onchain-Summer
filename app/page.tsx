@@ -94,7 +94,7 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center p-12 bg-teaser-gradient">
+    <main className="flex min-h-screen flex-col items-center p-6 md:p-12 bg-teaser-gradient">
       <div className="absolute right-2 top-2">
         {ownerAddress ? (
           <Button onClick={handleDisconnect} size="sm" variant="link">
