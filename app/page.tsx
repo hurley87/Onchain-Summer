@@ -4,11 +4,18 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Web3AuthModalPack, Web3AuthConfig } from '@safe-global/auth-kit';
 import { Web3AuthOptions } from '@web3auth/modal';
+import { CoinbaseAdapter } from '@web3auth/coinbase-adapter';
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import Countdown from '@/components/countdown';
 import { formatAddress } from '@/lib/utils';
+import { GelatoRelay } from '@gelatonetwork/relay-sdk';
+import { create } from 'ipfs-http-client';
+import OnchainSummer from '@/lib/OnchainSummer.json';
+import Link from 'next/link';
+import { toast } from '@/components/ui/use-toast';
 
+const relay = new GelatoRelay();
 const clientId = `${process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID}`;
 const web3AuthNetwork = `${process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK}` as any;
 const chainNamespace =
@@ -38,17 +45,37 @@ const web3AuthConfig: Web3AuthConfig = {
   txServiceUrl: 'https://safe-transaction-goerli.safe.global',
 };
 
+//web3auth.io/docs/sdk/pnp/web/modal/initialize#configuring-adapters
 // Instantiate and initialize the pack
 const web3AuthModalPack = new Web3AuthModalPack(web3AuthConfig);
 
 export default function Home() {
   const [ownerAddress, setOwnerAddress] = useState('');
-  const [web3Provider, setWeb3Provider] =
-    useState<ethers.providers.Web3Provider>();
+  const [web3Provider, setWeb3Provider] = useState<any>();
   const [isMinting, setIsMinting] = useState(false);
+  const [transactionHash, setTransactionHash] = useState('');
+  const projectId = process.env.NEXT_PUBLIC_INFRA_PROJECT_ID;
+  const projectSecret = process.env.NEXT_PUBLIC_INFRA_SECRET;
+  const projectIdAndSecret = `${projectId}:${projectSecret}`;
+  const target = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as string;
+
+  const ipfs = create({
+    host: 'ipfs.infura.io',
+    port: 5001,
+    protocol: 'https',
+    headers: {
+      authorization: `Basic ${Buffer.from(projectIdAndSecret).toString(
+        'base64'
+      )}`,
+    },
+  });
 
   useEffect(() => {
-    web3AuthModalPack.init({ options });
+    const coinbaseAdapter = new CoinbaseAdapter({
+      clientId,
+    }) as any;
+
+    web3AuthModalPack.init({ options, adapters: [coinbaseAdapter] });
 
     if (web3AuthModalPack) signIn();
   }, []);
@@ -56,10 +83,9 @@ export default function Home() {
   const signIn = async () => {
     try {
       const { eoa } = await web3AuthModalPack.signIn();
-      const provider =
-        web3AuthModalPack.getProvider() as ethers.providers.ExternalProvider;
+      const provider = web3AuthModalPack.getProvider() as any;
       setOwnerAddress(eoa);
-      setWeb3Provider(new ethers.providers.Web3Provider(provider));
+      setWeb3Provider(new ethers.BrowserProvider(provider));
     } catch (error) {
       console.log(error);
     }
@@ -68,10 +94,64 @@ export default function Home() {
   const handleMint = async () => {
     setIsMinting(true);
     try {
-      const signer = web3Provider?.getSigner();
-      console.log('TODO: mint');
-      console.log(signer);
-      setIsMinting(false);
+      const signer = (await web3Provider?.getSigner()) as any;
+      const mintJson = {
+        name: 'Onchain Summer 08.09.23',
+        description:
+          "Base is for everyone, everywhere. Bridge to Base to join us as the journey begins. This NFT commemorates you being early — you're one of the first to teleport into the next generation of the internet as we work to bring billions of people onchain. It's Onchain Summer and we're excited to celebrate with you.",
+        image: 'https://pollock-art.s3.amazonaws.com/giphy.gif',
+      };
+      const uploaded = await ipfs.add(JSON.stringify(mintJson));
+      const path = uploaded.path;
+      const contract = new ethers.Contract(target, OnchainSummer.abi, signer);
+
+      try {
+        const { chainId } = await web3Provider.getNetwork();
+        const { data } = await contract?.mint.populateTransaction(
+          signer.address,
+          path
+        );
+        const request: any = {
+          chainId: chainId,
+          target,
+          data: data,
+          user: signer.address,
+        };
+        const apiKey = process.env.NEXT_PUBLIC_GELATO_API_KEY as string;
+        const response = await relay.sponsoredCallERC2771(
+          request,
+          signer.provider,
+          apiKey
+        );
+        const taskId = response.taskId;
+
+        const interval = setInterval(async () => {
+          try {
+            setIsMinting(true);
+            const taskStatus = await relay.getTaskStatus(taskId || '');
+            if (taskStatus?.taskState === 'ExecSuccess') {
+              clearInterval(interval);
+              setIsMinting(false);
+              toast({
+                title: 'NFT minted!',
+                description: 'View your NFT on the Blockscout or Opensea.',
+              });
+              const transactionHash = taskStatus?.transactionHash as string;
+              setTransactionHash(transactionHash);
+            } else if (taskStatus?.taskState === 'Cancelled') {
+              throw new Error('Error minting tokens');
+            }
+          } catch (error) {
+            console.log(error);
+            if (!error?.toString().includes('GelatoRelaySDK/getTaskStatus')) {
+              setIsMinting(false);
+            }
+          }
+        }, 1000);
+      } catch (e) {
+        console.log('Error minting NFT: ', e);
+        setIsMinting(false);
+      }
     } catch (error) {
       console.log(error);
       setIsMinting(false);
@@ -92,9 +172,19 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center p-6 md:p-12 bg-teaser-gradient">
       <div className="absolute right-2 top-2">
         {ownerAddress ? (
-          <Button onClick={handleDisconnect} size="sm" variant="link">
-            Disconnect {formatAddress(ownerAddress)}
-          </Button>
+          <div className="flex">
+            <Link
+              target="_blank"
+              href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL}/address/${ownerAddress}`}
+            >
+              <Button className="px-0" size="sm" variant="link">
+                {formatAddress(ownerAddress)}
+              </Button>
+            </Link>
+            <Button onClick={handleDisconnect} size="sm" variant="link">
+              Disconnect
+            </Button>
+          </div>
         ) : (
           <Button onClick={signIn} size="sm" variant="link">
             Connect Wallet
@@ -133,10 +223,20 @@ export default function Home() {
           <div className="flex flex-col w-full gap-4 mt-auto">
             <Countdown />
             {ownerAddress ? (
-              <Button disabled={isMinting} onClick={handleMint} size="lg">
-                {' '}
-                {isMinting ? 'Minting ...' : 'Mint For Free'}{' '}
-              </Button>
+              <>
+                {transactionHash !== '' ? (
+                  <Link
+                    target="_blank"
+                    href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL}/tx/${transactionHash}`}
+                  >
+                    <Button size="lg">View Transaction</Button>
+                  </Link>
+                ) : (
+                  <Button disabled={isMinting} onClick={handleMint} size="lg">
+                    {isMinting ? 'Minting ...' : 'Mint For Free'}{' '}
+                  </Button>
+                )}
+              </>
             ) : (
               <Button onClick={signIn} size="lg">
                 Connect Wallet
