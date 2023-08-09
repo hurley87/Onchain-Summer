@@ -179,8 +179,8 @@ export default function Home() {
           </div>
           <p className="text-[#444]">
             Base mainnet opens for everyone on August 9 with the goal of
-            bringing 1B+ people onchain by providing a foundation for mainstream consumer crypto
-            products.
+            bringing 1B+ people onchain by providing a foundation for mainstream
+            consumer crypto products.
           </p>
           <p className="text-[#444]">
             In this demo you can mint an NFT for free with only your email.{' '}
