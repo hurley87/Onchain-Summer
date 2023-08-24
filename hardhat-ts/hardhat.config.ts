@@ -10,16 +10,6 @@ module.exports = {
       'base-mainnet': process.env.ETHERSCAN_API_KEY,
     },
   },
-  customChains: [
-    {
-      network: 'base-mainnet',
-      chainId: 8453,
-      urls: {
-        apiURL: 'https://mainnet.base.org',
-        browserURL: 'https://mainnet.base.org',
-      },
-    },
-  ],
   networks: {
     'base-mainnet': {
       url: 'https://mainnet.base.org',
