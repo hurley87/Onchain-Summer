@@ -2,50 +2,17 @@
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Web3AuthModalPack, Web3AuthConfig } from '@safe-global/auth-kit';
 import { useEffect, useState } from 'react';
 import { ethers } from 'ethers';
 import Countdown from '@/components/countdown';
 import { formatAddress } from '@/lib/utils';
-import { GelatoRelay } from '@gelatonetwork/relay-sdk';
-import OnchainSummer from '@/lib/OnchainSummer.json';
 import Link from 'next/link';
-import { toast } from '@/components/ui/use-toast';
-
-const relay = new GelatoRelay();
-const clientId = `${process.env.NEXT_PUBLIC_WEB3AUTH_CLIENT_ID}`;
-const web3AuthNetwork = `${process.env.NEXT_PUBLIC_WEB3AUTH_NETWORK}` as any;
-const chainNamespace =
-  `${process.env.NEXT_PUBLIC_WEB3AUTH_CHAIN_NAMESPACE}` as any;
-const chainId = `${process.env.NEXT_PUBLIC_CHAIN_ID}`;
-const rpcTarget = `${process.env.NEXT_PUBLIC_RPC}`;
-
-const options: any = {
-  clientId,
-  web3AuthNetwork,
-  chainConfig: {
-    chainNamespace,
-    chainId,
-    rpcTarget,
-  },
-  uiConfig: {
-    theme: 'dark',
-    loginMethodsOrder: ['google', 'facebook'],
-  },
-};
-
-const web3AuthConfig: Web3AuthConfig = {
-  txServiceUrl: 'https://safe-transaction-goerli.safe.global',
-};
-
-const web3AuthModalPack = new Web3AuthModalPack(web3AuthConfig);
+import { web3AuthModalPack, options } from '@/lib/auth';
+import Mint from '@/components/mint';
 
 export default function Home() {
   const [ownerAddress, setOwnerAddress] = useState('');
   const [web3Provider, setWeb3Provider] = useState<any>();
-  const [isMinting, setIsMinting] = useState(false);
-  const [transactionHash, setTransactionHash] = useState('');
-  const target = process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as string;
 
   useEffect(() => {
     web3AuthModalPack.init({ options });
@@ -61,66 +28,6 @@ export default function Home() {
       setWeb3Provider(new ethers.BrowserProvider(provider));
     } catch (error) {
       console.log(error);
-    }
-  };
-
-  const handleMint = async () => {
-    setIsMinting(true);
-    try {
-      const signer = (await web3Provider?.getSigner()) as any;
-      const path = process.env.NEXT_PUBLIC_NFT_METADATA;
-      const contract = new ethers.Contract(target, OnchainSummer.abi, signer);
-
-      try {
-        const { chainId } = await web3Provider.getNetwork();
-        const { data } = await contract?.mint.populateTransaction(
-          signer.address,
-          path
-        );
-        const request: any = {
-          chainId: chainId,
-          target,
-          data: data,
-          user: signer.address,
-        };
-        const apiKey = process.env.NEXT_PUBLIC_GELATO_API_KEY as string;
-        const response = await relay.sponsoredCallERC2771(
-          request,
-          signer.provider,
-          apiKey
-        );
-        const taskId = response.taskId;
-
-        const interval = setInterval(async () => {
-          try {
-            setIsMinting(true);
-            const taskStatus = await relay.getTaskStatus(taskId || '');
-            if (taskStatus?.taskState === 'ExecSuccess') {
-              clearInterval(interval);
-              setIsMinting(false);
-              toast({
-                title: 'NFT minted!',
-                description: 'View the NFT transaction on Blockscout.',
-              });
-              const transactionHash = taskStatus?.transactionHash as string;
-              setTransactionHash(transactionHash);
-            } else if (taskStatus?.taskState === 'Cancelled') {
-              throw new Error('Error minting tokens');
-            }
-          } catch (error) {
-            console.log(error);
-            if (!error?.toString().includes('GelatoRelaySDK/getTaskStatus')) {
-              setIsMinting(false);
-            }
-          }
-        }, 1000);
-      } catch (e) {
-        console.log('Error minting NFT: ', e);
-        setIsMinting(false);
-      }
-    } catch (error) {
-      console.log(error);
-      setIsMinting(false);
     }
   };
 
@@ -204,20 +111,7 @@ export default function Home() {
           <div className="flex flex-col w-full gap-4 mt-auto">
             <Countdown />
             {ownerAddress ? (
-              <>
-                {transactionHash !== '' ? (
-                  <Link
-                    target="_blank"
-                    href={`${process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL}/tx/${transactionHash}`}
-                  >
-                    <Button size="lg">View Transaction</Button>
-                  </Link>
-                ) : (
-                  <Button disabled={isMinting} onClick={handleMint} size="lg">
-                    {isMinting ? 'Minting ...' : 'Mint For Free'}{' '}
-                  </Button>
-                )}
-              </>
+              <Mint web3Provider={web3Provider} />
             ) : (
               <Button onClick={signIn} size="lg">
                 Connect Wallet
